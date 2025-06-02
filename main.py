@@ -42,10 +42,15 @@ application.add_handler(CallbackQueryHandler(button))
 def home():
     return "Nasib Bot is running!"
 
-@app.route('/start-bot')
-def start_bot():
-    application.run_polling()
-    return "Bot started!"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    import asyncio
+    from telegram.ext import Application
+
+    async def main():
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        app.run(host='0.0.0.0', port=10000)
+
+    asyncio.run(main())

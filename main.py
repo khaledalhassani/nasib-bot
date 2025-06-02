@@ -43,9 +43,6 @@ def home():
     return "Nasib Bot is running!"
 
 
-if __name__ == '__main__':
-    import asyncio
-    from telegram.ext import Application
 
     async def main():
         await application.initialize()

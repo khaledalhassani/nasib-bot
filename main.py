@@ -3,7 +3,7 @@ from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler
 
-TOKEN = "YOUR_BOT_TOKEN_HERE"  # بدّله بتوكن بوتك
+TOKEN 7203230027:AAHvtW1zMPbkU07rE7LFkx3LA5bp0TfNv7g
 
 app = Flask(__name__)
 

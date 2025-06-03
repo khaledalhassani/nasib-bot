@@ -1,51 +1,48 @@
-import logging
-import os
 from flask import Flask, request
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+import os
 
-TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = f"https://nasib-bot.onrender.com/webhook"
-
+# إعدادات Flask
 app = Flask(__name__)
 
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+# جلب التوكن من المتغيرات البيئية
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+application = Application.builder().token(BOT_TOKEN).build()
 
-currencies = ["EUR/USD", "USD/JPY", "GBP/USD", "BTC/USD"]
-selected = {}
-
+# دالة الأمر /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton(cur, callback_data=cur)] for cur in currencies]
-    keyboard.append([InlineKeyboardButton("🚀 إرسال الإشارة", callback_data="send_signal")])
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("اختر العملة ثم أرسل الإشارة:", reply_markup=reply_markup)
+    await update.message.reply_text("تم تفعيل البوت ✅")
 
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data == "send_signal":
-        await query.edit_message_text("📡 تم إرسال الإشارة!")
-    else:
-        selected[query.from_user.id] = query.data
-        await query.edit_message_text(f"✅ تم اختيار: {query.data}")
+# دالة الأمر /help
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("اكتب /signal لطلب إشارة 🔔")
 
-application = ApplicationBuilder().token(TOKEN).build()
+# دالة الأمر /signal
+async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔔 تم تسجيل طلبك لإشارة")
+
+# إضافة الأوامر
 application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(button))
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(CommandHandler("signal", signal))
 
-@app.route('/')
+# ربط Webhook مع Flask
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put_nowait(update)
+    return "ok"
+
+# صفحة اختبار
+@app.route("/")
 def index():
-    return "Nasib Bot is running!"
+    return "بوت النسيب شغال 🔥"
 
-@app.route('/webhook', methods=['POST'])
-async def webhook():
-    await application.initialize()
-    await application.process_update(Update.de_json(request.get_json(force=True), application.bot))
-    return 'ok'
-
-if __name__ == '__main__':
+# تشغيل التطبيق
+if __name__ == "__main__":
     application.run_webhook(
         listen="0.0.0.0",
         port=10000,
-        webhook_url=WEBHOOK_URL
+        webhook_url=f"https://nasib-bot.onrender.com/{BOT_TOKEN}"
     )

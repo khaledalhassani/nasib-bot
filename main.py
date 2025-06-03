@@ -1,11 +1,11 @@
 import logging
+import os
+import asyncio
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-import os
 TOKEN = os.getenv("BOT_TOKEN")
-
 app = Flask(__name__)
 
 # إعدادات اللوق
@@ -18,9 +18,9 @@ selected = {}
 # دالة البدء
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(cur, callback_data=cur)] for cur in currencies]
-    keyboard.append([InlineKeyboardButton("🚀 إرسال الإشارة", callback_data="send_signal")])
+    keyboard.append([InlineKeyboardButton("🚀 أرسل الإشارة", callback_data="send_signal")])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("اختر عملة أو أرسل إشارة 🚀", reply_markup=reply_markup)
+    await update.message.reply_text("اختر العملة ثم اضغط 🚀 لإرسال الإشارة", reply_markup=reply_markup)
 
 # دالة الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,17 +37,19 @@ application = ApplicationBuilder().token(TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-# تشغيل فلَسك للسيرفر
+# تشغيل فحص للسيرفر
 @app.route('/')
 def home():
     return "Nasib Bot is running!"
 
+# تشغيل البوت عبر رابط
+@app.route('/start-bot')
+async def start_bot():
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    return "Bot started!"
 
-
-    async def main():
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
-        app.run(host='0.0.0.0', port=10000)
-
-    asyncio.run(main())
+# تشغيل السيرفر
+if __name__ == '__main__':
+    asyncio.run(app.run(host='0.0.0.0', port=10000))

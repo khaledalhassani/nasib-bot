@@ -1,28 +1,25 @@
 import logging
 import os
-from flask import Flask
+from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# إعداد التوكن
 TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = f"https://nasib-bot.onrender.com/webhook"
+
 app = Flask(__name__)
 
-# إعداد اللوق
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# العملات
-currencies = ["EUR/USD", "USD/JPY", "GBP/USD", "BTC/USDT"]
+currencies = ["EUR/USD", "USD/JPY", "GBP/USD", "BTC/USD"]
 selected = {}
 
-# دالة البدء
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(cur, callback_data=cur)] for cur in currencies]
     keyboard.append([InlineKeyboardButton("🚀 إرسال الإشارة", callback_data="send_signal")])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("اختر عملة ثم اضغط إرسال الإشارة:", reply_markup=reply_markup)
+    await update.message.reply_text("اختر العملة ثم أرسل الإشارة:", reply_markup=reply_markup)
 
-# دالة الضغط على الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -32,20 +29,23 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected[query.from_user.id] = query.data
         await query.edit_message_text(f"✅ تم اختيار: {query.data}")
 
-# البوت ككائن
-bot_app = Application.builder().token(TOKEN).build()
-bot_app.add_handler(CommandHandler("start", start))
-bot_app.add_handler(CallbackQueryHandler(button))
+application = ApplicationBuilder().token(TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(button))
 
-# Flask route فقط للفحص
 @app.route('/')
-def home():
+def index():
     return "Nasib Bot is running!"
 
-# تشغيل البوت داخل Render (بدون /start-bot)
-@app.before_first_request
-def start_bot():
-    import asyncio
-    asyncio.create_task(bot_app.initialize())
-    asyncio.create_task(bot_app.start())
-    asyncio.create_task(bot_app.updater.start_polling())
+@app.route('/webhook', methods=['POST'])
+async def webhook():
+    await application.initialize()
+    await application.process_update(Update.de_json(request.get_json(force=True), application.bot))
+    return 'ok'
+
+if __name__ == '__main__':
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=10000,
+        webhook_url=WEBHOOK_URL
+    )

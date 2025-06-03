@@ -5,6 +5,7 @@ from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
+# إعدادات التوكن
 TOKEN = os.getenv("BOT_TOKEN")
 app = Flask(__name__)
 
@@ -18,19 +19,19 @@ selected = {}
 # دالة البدء
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(cur, callback_data=cur)] for cur in currencies]
-    keyboard.append([InlineKeyboardButton("🚀 أرسل الإشارة", callback_data="send_signal")])
+    keyboard.append([InlineKeyboardButton("🚀 إرسال الإشارة", callback_data="send_signal")])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("اختر العملة ثم اضغط 🚀 لإرسال الإشارة", reply_markup=reply_markup)
+    await update.message.reply_text("اختر العملة ثم أرسل إشارة 🚀", reply_markup=reply_markup)
 
 # دالة الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "send_signal":
-        await query.edit_message_text("📡 تم إرسال الإشارة!")
+        await query.edit_message_text("🛰 تم إرسال الإشارة!")
     else:
         selected[query.from_user.id] = query.data
-        await query.edit_message_text(f"✅ تم اختيار: {query.data}")
+        await query.edit_message_text(f"✅ تم اختيار {query.data}")
 
 # تشغيل البوت
 application = ApplicationBuilder().token(TOKEN).build()
@@ -52,4 +53,4 @@ async def start_bot():
 
 # تشغيل السيرفر
 if __name__ == '__main__':
-    asyncio.run(app.run(host='0.0.0.0', port=10000))
+    app.run(host='0.0.0.0', port=10000)

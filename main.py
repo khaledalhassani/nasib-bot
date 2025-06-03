@@ -45,10 +45,13 @@ def home():
 
 # تشغيل البوت عبر رابط
 @app.route('/start-bot')
-async def start_bot():
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
+def start_bot():
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(application.initialize())
+    loop.run_until_complete(application.start())
+    loop.run_until_complete(application.updater.start_polling())
     return "Bot started!"
 
 # تشغيل السيرفر
